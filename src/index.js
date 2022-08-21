@@ -1,6 +1,7 @@
 const fs = require("fs");
-const express = require("express");
 const https = require("https");
+const express = require("express");
+const cookieParser = require("cookie-parser");
 const admin = require("firebase-admin");
 const api = require("./api");
 const firebaseSdk = require("../config/firebase-adminsdk.json");
@@ -12,12 +13,18 @@ admin.initializeApp({
 });
 
 // --- Function ---
+const verifyToken = (token) => {
+  return admin.auth().verifyIdToken(token, true);
+};
+const revokeToken = (uid) => {
+  return admin.auth().revokeRefreshTokens(uid);
+};
 const authValidation = async (req) => {
   const authPaths = ["/api"];
   for (const path of authPaths) {
     if (req.path.startsWith(path)) {
       try {
-        await admin.auth().verifyIdToken(req.headers.authorization);
+        await verifyToken(req.headers.authorization);
         return true;
       } catch (err) {
         throw err;
@@ -35,7 +42,11 @@ const middleware = async (req, res, next) => {
       body: req.body,
       query: req.query,
     };
-    console.log(`${new Date()} : Request > ${JSON.stringify(reqData)}`);
+    console.log(`
+    ==================== DUMP REQUEST ====================    
+    # ${new Date()}
+    > ${JSON.stringify(reqData)}
+    ======================================================`);
     if (await authValidation(req)) {
       next();
     } else {
@@ -52,6 +63,7 @@ const app = express();
 app.set("views", __dirname + "/views");
 app.set("view engine", "ejs");
 app.use(middleware);
+app.use(cookieParser());
 // # API
 app.use("/api", api);
 // # Login System
@@ -61,13 +73,20 @@ app.get("/", (req, res) => {
 app.get("/savetoken", async (req, res) => {
   const idToken = req.query.idToken;
   try {
-    const resp = await admin.auth().verifyIdToken(idToken);
-    console.log(resp);
+    const resp = await verifyToken(idToken);
+    res.cookie("__session", idToken);
     res.render("success", { name: resp.name, email: resp.email });
   } catch (err) {
     console.log(err);
     res.status(401).send("UnAuthorised Request");
   }
+});
+app.get("/logout", async (req, res) => {
+  const idToken = req.cookies.__session;
+  const resp = await verifyToken(idToken);
+  await revokeToken(resp.uid);
+  res.clearCookie("__session");
+  res.redirect("/");
 });
 
 // --- Start Server ---
