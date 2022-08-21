@@ -3,7 +3,6 @@ const axios = require("axios");
 
 const router = express.Router();
 
-// Doc : https://developers.google.com/maps/documentation/places/web-service/search-text
 router.get("/textsearch", async (req, res) => {
   const query = encodeURIComponent(req.query.search);
   const apiKey = "AIzaSyCm_4HQFULzz6v-9SO34BAs2YJI6XmB_64";
