@@ -99,7 +99,7 @@ app.get("/xo", (req, res) => {
 });
 
 // --- Start Server ---
-const port = 5000;
+const port = process.env.PORT || 5000;
 // const httpsServer = https.createServer(
 //   { key: privateKey, cert: certificate },
 //   app
