@@ -100,10 +100,10 @@ app.get("/xo", (req, res) => {
 
 // --- Start Server ---
 const port = 5000;
-const httpsServer = https.createServer(
-  { key: privateKey, cert: certificate },
-  app
-);
-httpsServer.listen(port, () => {
+// const httpsServer = https.createServer(
+//   { key: privateKey, cert: certificate },
+//   app
+// );
+app.listen(port, () => {
   console.log(`Start server at port ${port}`);
 });
