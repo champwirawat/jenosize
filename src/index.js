@@ -20,11 +20,11 @@ const revokeToken = (uid) => {
   return admin.auth().revokeRefreshTokens(uid);
 };
 const authValidation = async (req) => {
-  const authPaths = ["/api"];
-  for (const path of authPaths) {
+  const authApiPaths = ["/api", "/xo"];
+  for (const path of authApiPaths) {
     if (req.path.startsWith(path)) {
       try {
-        await verifyToken(req.headers.authorization);
+        await verifyToken(req.cookies.__session);
         return true;
       } catch (err) {
         throw err;
@@ -43,9 +43,9 @@ const middleware = async (req, res, next) => {
       query: req.query,
     };
     console.log(`
+    ${new Date()}
     ==================== DUMP REQUEST ====================    
-    # ${new Date()}
-    > ${JSON.stringify(reqData)}
+    ${JSON.stringify(reqData)}
     ======================================================`);
     if (await authValidation(req)) {
       next();
@@ -62,8 +62,9 @@ const middleware = async (req, res, next) => {
 const app = express();
 app.set("views", __dirname + "/views");
 app.set("view engine", "ejs");
-app.use(middleware);
 app.use(cookieParser());
+app.use(middleware);
+
 // # API
 app.use("/api", api);
 // # Login System
@@ -75,7 +76,11 @@ app.get("/savetoken", async (req, res) => {
   try {
     const resp = await verifyToken(idToken);
     res.cookie("__session", idToken);
-    res.render("success", { name: resp.name, email: resp.email });
+    res.render("success", {
+      name: resp.name,
+      email: resp.email,
+      idToken: idToken,
+    });
   } catch (err) {
     console.log(err);
     res.status(401).send("UnAuthorised Request");
@@ -87,6 +92,10 @@ app.get("/logout", async (req, res) => {
   await revokeToken(resp.uid);
   res.clearCookie("__session");
   res.redirect("/");
+});
+// # Game XO
+app.get("/xo", (req, res) => {
+  res.sendFile(__dirname + "/views/xo-page.html");
 });
 
 // --- Start Server ---

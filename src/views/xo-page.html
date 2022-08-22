@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <style>
+      .title {
+        text-align: center;
+      }
+      .container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
+      .box-xo {
+        display: grid;
+        grid-template-columns: auto auto auto;
+        width: 400px;
+      }
+      .item-xo {
+        border: 1px solid #000;
+        text-align: center;
+        height: 100px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1 class="title">Game XO</h1>
+    <div class="container">
+      <button type="button" onclick="clearBoard()">Clear</button>
+      <br />
+      <div class="box-xo" id="box-xo"></div>
+    </div>
+
+    <script>
+      const loadBoard = async (listBoard) => {
+        if (!listBoard) {
+          listBoard = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+        }
+        let listItem = ``;
+        for (let i = 0; i < listBoard.length; i++) {
+          const itemXO = `<div class="item-xo" onclick="place(${i})">
+                <span>${
+                  listBoard[i] == "X" || listBoard[i] == "O" ? listBoard[i] : ""
+                }</span>
+            </div>`;
+          listItem += itemXO;
+        }
+
+        document.getElementById(
+          "box-xo"
+        ).innerHTML = `<div class="box-xo" id="box-xo">${listItem}</div>`;
+      };
+
+      const place = async (idx) => {
+        const resp = await fetch(`/api/xo-bot?index=${idx}`);
+        const data = await resp.json();
+        if (data.status == "success") {
+          loadBoard(data.board);
+        } else {
+          alert(data.error);
+        }
+      };
+
+      const clearBoard = async () => {
+        const resp = await fetch(`/api/xo-bot/clear`);
+        const data = await resp.json();
+        if (data.status == "success") {
+          loadBoard();
+        } else {
+          alert(data.error);
+        }
+      };
+
+      (() => {
+        loadBoard();
+      })();
+    </script>
+  </body>
+</html>
